@@ -49,20 +49,49 @@
 
 const baseUrl = "https://api.openbrewerydb.org/breweries"
 
+const stateSelectorForm = document.querySelector('#select-state-form')
+
 const state = {
-    breweries = []
+    breweries: [],
+    selectedState: null,
+    breweryType: ['micro', 'regional', 'brewpub']
 }
 
-function getBreweries() {
+
+// Filters the breweries we want to display by type
+function getBreweriesToDisplay() {
+    let breweriesToDisplay = state.breweries
+    breweriesToDisplay = breweriesToDisplay.filter(brewery =>
+        state.breweryType.includes(brewery.brewery_type))
+
+    return breweriesToDisplay
+}
+
+function fetchBreweries() {
     return fetch(baseUrl).then(resp => resp.json())
+}
+
+function fetchBreweriesByState(state) {
+    return fetch(baseUrl + `?by_state=${state}`).then(resp => resp.json())
 }
 
 function render() {
 
 }
 
-function init() {
+function getStateFromStateSelectorForm() {
+    stateSelectorForm.addEventListener('submit', (e) => {
+        e.preventDefault()
+        state.selectedState = stateSelectorForm['select-state'].value
+        fetchBreweriesByState(state.selectedState)
+            .then((breweries) => {
+                state.breweries = breweries
+            })
+    })
+}
 
+function init() {
+    getStateFromStateSelectorForm()
 }
 
 init()
