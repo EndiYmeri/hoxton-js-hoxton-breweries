@@ -50,11 +50,15 @@
 const baseUrl = "https://api.openbrewerydb.org/breweries"
 
 const stateSelectorForm = document.querySelector('#select-state-form')
+const filtersSectionAsideEl = document.querySelector('.filters-section')
+const filterByCityForm = document.querySelector('#filter-by-city-form')
 
 const state = {
     breweries: [],
     selectedState: null,
-    breweryType: ['micro', 'regional', 'brewpub']
+    breweryType: ['micro', 'regional', 'brewpub'],
+    selectedBreweryType: '',
+    selectedCities: []
 }
 
 
@@ -64,7 +68,57 @@ function getBreweriesToDisplay() {
     breweriesToDisplay = breweriesToDisplay.filter(brewery =>
         state.breweryType.includes(brewery.brewery_type))
 
+    breweriesToDisplay = breweriesToDisplay.slice(0, 10)
+
     return breweriesToDisplay
+}
+
+function getStateFromStateSelectorForm() {
+    stateSelectorForm.addEventListener('submit', (e) => {
+        e.preventDefault()
+        state.selectedState = stateSelectorForm['select-state'].value
+        fetchBreweriesByState(state.selectedState)
+            .then((breweries) => {
+                state.breweries = breweries
+                render()
+            })
+    })
+}
+
+
+function getCitiesFromBreweries(breweries) {
+    let cities = []
+    for (const brewery of breweries) {
+        if (!cities.includes(brewery.city)) {
+            cities.push(brewery.city)
+        }
+    }
+    return cities
+}
+
+function getSelectedBreweryType() {
+    const filterByTypeSelect = document.querySelector('#filter-by-type')
+
+    filterByTypeSelect.addEventListener('change', () => {
+        state.selectedBreweryType = filterByTypeSelect.value
+    })
+}
+
+function getSelectedCities() {
+    let cityCheckboxes = document.querySelectorAll('.city-checkboxes')
+
+    // cityCheckboxes.forEach((element) => {
+    //     element.addEventListener('change', () => {
+    //         render()
+    //     })
+    // })
+
+    cityCheckboxes = [...cityCheckboxes]
+
+    return state.selectedCities = cityCheckboxes
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value)
+
 }
 
 function fetchBreweries() {
@@ -75,22 +129,45 @@ function fetchBreweriesByState(state) {
     return fetch(baseUrl + `?by_state=${state}`).then(resp => resp.json())
 }
 
+function renderFilterSection() {
+    if (state.breweries.length !== 0) {
+        filtersSectionAsideEl.style.display = "block";
+    } else {
+        filtersSectionAsideEl.style.display = "none";
+    }
+
+    const cities = getCitiesFromBreweries(state.breweries)
+    filterByCityForm.innerHTML = ""
+
+    for (const city of cities) {
+        const cityCheckboxInputEl = document.createElement('input')
+        const cityCheckboxLabelEl = document.createElement('label')
+
+        cityCheckboxInputEl.setAttribute('type', 'checkbox')
+        cityCheckboxInputEl.setAttribute('name', city)
+        cityCheckboxInputEl.setAttribute('value', city)
+        cityCheckboxInputEl.setAttribute('id', city)
+        cityCheckboxInputEl.setAttribute('class', 'city-checkboxes')
+
+
+        cityCheckboxLabelEl.setAttribute('for', city)
+        cityCheckboxLabelEl.textContent = city
+        filterByCityForm.append(cityCheckboxInputEl, cityCheckboxLabelEl)
+    }
+
+}
+
+
 function render() {
-
+    renderFilterSection()
+    getSelectedBreweryType()
+    getSelectedCities()
 }
 
-function getStateFromStateSelectorForm() {
-    stateSelectorForm.addEventListener('submit', (e) => {
-        e.preventDefault()
-        state.selectedState = stateSelectorForm['select-state'].value
-        fetchBreweriesByState(state.selectedState)
-            .then((breweries) => {
-                state.breweries = breweries
-            })
-    })
-}
+
 
 function init() {
+    render()
     getStateFromStateSelectorForm()
 }
 
