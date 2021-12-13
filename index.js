@@ -58,6 +58,15 @@ const filterByCityForm = document.querySelector('#filter-by-city-form')
 const filterByTypeSelect = document.querySelector('#filter-by-type')
 const clearAllButton = document.querySelector('.clear-all-btn')
 
+
+const searchBreweriesForm = document.querySelector('#search-breweries-form')
+const searchBreweries = document.querySelector('#search-breweries')
+
+searchBreweriesForm.addEventListener('submit', (e) => {
+    e.preventDefault()
+    renderBreweriesArticleList()
+})
+
 clearAllButton.addEventListener('click', () => {
     render()
 })
@@ -87,6 +96,9 @@ const state = {
 // A: state.selectedCities
 
 // Filters the breweries we want to display by type
+
+
+
 function getBreweriesToDisplay() {
     let breweriesToDisplay = state.breweries
 
@@ -94,16 +106,23 @@ function getBreweriesToDisplay() {
         brewery => state.breweryType.includes(brewery.brewery_type)
     )
 
-    if (state.selectedBreweryType !== "") {
-        breweriesToDisplay = breweriesToDisplay.filter(
-            brewery => brewery.brewery_type === state.selectedBreweryType
-        )
-    }
+    if (searchBreweries.value !== "") {
+        breweriesToDisplay = breweriesToDisplay.filter((brewery) => {
+            return brewery.name.includes(searchBreweries.value) || brewery.city.includes(searchBreweries.value)
+        })
 
-    if (state.selectedCities.length > 0) {
-        breweriesToDisplay = breweriesToDisplay.filter(
-            brewery => state.selectedCities.includes(brewery.city)
-        )
+    } else {
+        if (state.selectedBreweryType !== "") {
+            breweriesToDisplay = breweriesToDisplay.filter(
+                brewery => brewery.brewery_type === state.selectedBreweryType
+            )
+        }
+
+        if (state.selectedCities.length > 0) {
+            breweriesToDisplay = breweriesToDisplay.filter(
+                brewery => state.selectedCities.includes(brewery.city)
+            )
+        }
     }
 
     breweriesToDisplay = breweriesToDisplay.slice(0, 10)
