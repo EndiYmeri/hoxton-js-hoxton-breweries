@@ -150,6 +150,7 @@ function getSelectedBreweryType() {
     filterByTypeSelect.addEventListener('change', () => {
         state.selectedBreweryType = filterByTypeSelect.value
         renderBreweriesArticleList()
+        searchBreweries.value = ""
     })
 }
 
@@ -161,6 +162,7 @@ function getSelectedCities() {
         element.addEventListener('change', () => {
             getSelectedCities()
             renderBreweriesArticleList()
+            searchBreweries.value = ""
         })
     })
 
@@ -295,6 +297,7 @@ function render() {
     filterByTypeSelect.value = ""
     state.selectedCities = []
     state.selectedBreweryType = ''
+    searchBreweries.value = ""
     renderMainChildren()
     renderFilterSection()
     getSelectedCities()
