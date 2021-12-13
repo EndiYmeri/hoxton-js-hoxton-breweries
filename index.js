@@ -49,10 +49,18 @@
 
 const baseUrl = "https://api.openbrewerydb.org/breweries"
 
+const main = document.querySelector('main')
+const mainChildren = [...main.children]
+
 const stateSelectorForm = document.querySelector('#select-state-form')
 const filtersSectionAsideEl = document.querySelector('.filters-section')
 const filterByCityForm = document.querySelector('#filter-by-city-form')
+const filterByTypeSelect = document.querySelector('#filter-by-type')
+const clearAllButton = document.querySelector('.clear-all-btn')
 
+clearAllButton.addEventListener('click', () => {
+    render()
+})
 const state = {
     breweries: [],
     selectedState: null,
@@ -62,11 +70,41 @@ const state = {
 }
 
 
+// QUESTIONS TO ANSWER:
+// Q: What kind of breweries should we be showing?
+// A: state.selectedBreweriesType
+
+// Q: Is there any brewery type selected?
+// A: state.selectedBreweryType !== ""
+
+// Q: Which one?
+// A: state.selectedBreweryType
+
+// Q: Are there any selected cities?
+// A: state.selectedCities.lenght > 0
+
+// Q: Which cities are selected?
+// A: state.selectedCities
+
 // Filters the breweries we want to display by type
 function getBreweriesToDisplay() {
     let breweriesToDisplay = state.breweries
-    breweriesToDisplay = breweriesToDisplay.filter(brewery =>
-        state.breweryType.includes(brewery.brewery_type))
+
+    breweriesToDisplay = breweriesToDisplay.filter(
+        brewery => state.breweryType.includes(brewery.brewery_type)
+    )
+
+    if (state.selectedBreweryType !== "") {
+        breweriesToDisplay = breweriesToDisplay.filter(
+            brewery => brewery.brewery_type === state.selectedBreweryType
+        )
+    }
+
+    if (state.selectedCities.length > 0) {
+        breweriesToDisplay = breweriesToDisplay.filter(
+            brewery => state.selectedCities.includes(brewery.city)
+        )
+    }
 
     breweriesToDisplay = breweriesToDisplay.slice(0, 10)
 
@@ -93,25 +131,28 @@ function getCitiesFromBreweries(breweries) {
             cities.push(brewery.city)
         }
     }
+    cities.sort()
+
     return cities
 }
 
 function getSelectedBreweryType() {
-    const filterByTypeSelect = document.querySelector('#filter-by-type')
 
     filterByTypeSelect.addEventListener('change', () => {
         state.selectedBreweryType = filterByTypeSelect.value
+        renderBreweriesArticleList()
     })
 }
 
 function getSelectedCities() {
     let cityCheckboxes = document.querySelectorAll('.city-checkboxes')
 
-    // cityCheckboxes.forEach((element) => {
-    //     element.addEventListener('change', () => {
-    //         render()
-    //     })
-    // })
+    cityCheckboxes.forEach((element) => {
+        element.addEventListener('change', () => {
+            getSelectedCities()
+            renderBreweriesArticleList()
+        })
+    })
 
     cityCheckboxes = [...cityCheckboxes]
 
@@ -126,17 +167,30 @@ function fetchBreweries() {
 }
 
 function fetchBreweriesByState(state) {
-    return fetch(baseUrl + `?by_state=${state}`).then(resp => resp.json())
+    return fetch(baseUrl + `?by_state=${state}&per_page=50`).then(resp => resp.json())
+}
+
+function renderMainChildren() {
+    if (state.breweries.length !== 0) {
+        // filtersSectionAsideEl.style.display = "block";
+
+        mainChildren.forEach((child) => {
+            child.style.display = "block"
+        })
+    } else {
+        mainChildren.forEach((child) => {
+                child.style.display = "none"
+            })
+            // filtersSectionAsideEl.style.display = "none";
+    }
+
 }
 
 function renderFilterSection() {
-    if (state.breweries.length !== 0) {
-        filtersSectionAsideEl.style.display = "block";
-    } else {
-        filtersSectionAsideEl.style.display = "none";
-    }
 
-    const cities = getCitiesFromBreweries(state.breweries)
+    const breweriesToDisplay = getBreweriesToDisplay()
+
+    const cities = getCitiesFromBreweries(breweriesToDisplay)
     filterByCityForm.innerHTML = ""
 
     for (const city of cities) {
@@ -158,17 +212,77 @@ function renderFilterSection() {
 }
 
 
-function render() {
-    renderFilterSection()
-    getSelectedBreweryType()
-    getSelectedCities()
+function renderBreweriesArticleList() {
+    const breweriesToDisplay = getBreweriesToDisplay()
+
+    const breweriesList = document.querySelector('.breweries-list')
+    breweriesList.innerHTML = ""
+
+    for (const brewery of breweriesToDisplay) {
+        const liEL = document.createElement('li')
+        const titleEl = document.createElement('h2')
+
+        titleEl.textContent = brewery.name
+
+
+        const typeDivEl = document.createElement('div')
+        typeDivEl.setAttribute('class', 'type')
+        typeDivEl.textContent = brewery.brewery_type
+
+        const addressSection = document.createElement('section')
+        addressSection.setAttribute('class', 'address')
+
+        const addressH3El = document.createElement('h3')
+        addressH3El.textContent = "Address:"
+
+        const streetEl = document.createElement('p')
+        streetEl.textContent = brewery.street
+
+        const cityEl = document.createElement('p')
+        cityEl.innerHTML = `<strong>${brewery.city}, ${brewery.postal_code}</strong>`
+
+        addressSection.append(addressH3El, streetEl, cityEl)
+
+
+        const phoneSection = document.createElement('section')
+        phoneSection.setAttribute('class', 'phone')
+
+        const phoneH3El = document.createElement('h3')
+        phoneH3El.textContent = "Phone:"
+
+        const phoneNr = document.createElement('p')
+        phoneNr.textContent = brewery.phone
+
+        phoneSection.append(phoneH3El, phoneNr)
+
+        const linkSection = document.createElement('section')
+        linkSection.setAttribute('class', 'link')
+
+        const linkEl = document.createElement('a')
+        linkEl.setAttribute('href', brewery.website_url)
+        linkEl.setAttribute('target', '_blank')
+        linkEl.textContent = "Visit Website"
+
+        linkSection.append(linkEl)
+
+        liEL.append(titleEl, typeDivEl, addressSection, phoneSection, linkSection)
+        breweriesList.append(liEL)
+    }
 }
 
-
+function render() {
+    filterByTypeSelect.value = ""
+    state.selectedCities = []
+    state.selectedBreweryType = ''
+    renderMainChildren()
+    renderFilterSection()
+    getSelectedCities()
+    getSelectedBreweryType()
+    renderBreweriesArticleList()
+}
 
 function init() {
     render()
     getStateFromStateSelectorForm()
 }
-
 init()
