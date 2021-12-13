@@ -48,28 +48,17 @@
 // - Add a booking section; a user can select a date and time to go on a tour at a brewery
 
 const baseUrl = "https://api.openbrewerydb.org/breweries"
-
 const main = document.querySelector('main')
 const mainChildren = [...main.children]
-
 const stateSelectorForm = document.querySelector('#select-state-form')
 const filtersSectionAsideEl = document.querySelector('.filters-section')
 const filterByCityForm = document.querySelector('#filter-by-city-form')
 const filterByTypeSelect = document.querySelector('#filter-by-type')
 const clearAllButton = document.querySelector('.clear-all-btn')
-
-
 const searchBreweriesForm = document.querySelector('#search-breweries-form')
 const searchBreweries = document.querySelector('#search-breweries')
 
-searchBreweriesForm.addEventListener('submit', (e) => {
-    e.preventDefault()
-    renderBreweriesArticleList()
-})
-
-clearAllButton.addEventListener('click', () => {
-    render()
-})
+// The state
 const state = {
     breweries: [],
     selectedState: null,
@@ -78,6 +67,10 @@ const state = {
     selectedCities: []
 }
 
+// Fetching Breweries from the API
+function fetchBreweriesByState(state) {
+    return fetch(baseUrl + `?by_state=${state}&per_page=50`).then(resp => resp.json())
+}
 
 // QUESTIONS TO ANSWER:
 // Q: What kind of breweries should we be showing?
@@ -95,29 +88,25 @@ const state = {
 // Q: Which cities are selected?
 // A: state.selectedCities
 
+
+// Action Functions
 // Filters the breweries we want to display by type
-
-
-
 function getBreweriesToDisplay() {
     let breweriesToDisplay = state.breweries
 
     breweriesToDisplay = breweriesToDisplay.filter(
         brewery => state.breweryType.includes(brewery.brewery_type)
     )
-
     if (searchBreweries.value !== "") {
         breweriesToDisplay = breweriesToDisplay.filter((brewery) => {
             return brewery.name.includes(searchBreweries.value) || brewery.city.includes(searchBreweries.value)
         })
-
     } else {
         if (state.selectedBreweryType !== "") {
             breweriesToDisplay = breweriesToDisplay.filter(
                 brewery => brewery.brewery_type === state.selectedBreweryType
             )
         }
-
         if (state.selectedCities.length > 0) {
             breweriesToDisplay = breweriesToDisplay.filter(
                 brewery => state.selectedCities.includes(brewery.city)
@@ -130,6 +119,7 @@ function getBreweriesToDisplay() {
     return breweriesToDisplay
 }
 
+// Getting the Breweries from that state
 function getStateFromStateSelectorForm() {
     stateSelectorForm.addEventListener('submit', (e) => {
         e.preventDefault()
@@ -142,7 +132,7 @@ function getStateFromStateSelectorForm() {
     })
 }
 
-
+// Getting Cities of the Breweries
 function getCitiesFromBreweries(breweries) {
     let cities = []
     for (const brewery of breweries) {
@@ -155,14 +145,15 @@ function getCitiesFromBreweries(breweries) {
     return cities
 }
 
+// Getting Selected Brewery Type
 function getSelectedBreweryType() {
-
     filterByTypeSelect.addEventListener('change', () => {
         state.selectedBreweryType = filterByTypeSelect.value
         renderBreweriesArticleList()
     })
 }
 
+// Getting Selected Cities 
 function getSelectedCities() {
     let cityCheckboxes = document.querySelectorAll('.city-checkboxes')
 
@@ -178,17 +169,26 @@ function getSelectedCities() {
     return state.selectedCities = cityCheckboxes
         .filter(checkbox => checkbox.checked)
         .map(checkbox => checkbox.value)
-
 }
 
-function fetchBreweries() {
-    return fetch(baseUrl).then(resp => resp.json())
+// Getting the brewery via search brewery section
+function getSearchedBreweries() {
+    searchBreweriesForm.addEventListener('submit', (e) => {
+        e.preventDefault()
+        renderBreweriesArticleList()
+    })
 }
 
-function fetchBreweriesByState(state) {
-    return fetch(baseUrl + `?by_state=${state}&per_page=50`).then(resp => resp.json())
+// Clearing All filter
+function clearAllFilters() {
+    clearAllButton.addEventListener('click', () => {
+        render()
+    })
 }
 
+
+// Render Functions
+// Rendering the children of Main Section if breweries list length is > 0
 function renderMainChildren() {
     if (state.breweries.length !== 0) {
         // filtersSectionAsideEl.style.display = "block";
@@ -205,6 +205,7 @@ function renderMainChildren() {
 
 }
 
+// Rendering the filter section
 function renderFilterSection() {
 
     const breweriesToDisplay = getBreweriesToDisplay()
@@ -230,7 +231,7 @@ function renderFilterSection() {
 
 }
 
-
+// Rendering the Breweries List 
 function renderBreweriesArticleList() {
     const breweriesToDisplay = getBreweriesToDisplay()
 
@@ -289,6 +290,7 @@ function renderBreweriesArticleList() {
     }
 }
 
+
 function render() {
     filterByTypeSelect.value = ""
     state.selectedCities = []
@@ -303,5 +305,7 @@ function render() {
 function init() {
     render()
     getStateFromStateSelectorForm()
+    getSearchedBreweries()
+    clearAllFilters()
 }
 init()
